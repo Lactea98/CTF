@@ -20,11 +20,33 @@
 
 php serialization 부분을 찾아봤지만 이번 문제에서는 이용할 만한 취약점은 아니었다. 위 링크에 나와있는 코드와 문제의 일부분 코드가 유사해서 똑같은 방법으로 hash_hmac()에 array를 집어 넣어도 문제를 풀 만한 방향은 아니었다.
 
+어쨋든 이 문제의 최종적인 목표는 isadmin을 1로 바꾸는 것이다. 이를 위해 note 라는 쿠키를 수정해서 보내면 무결성(?) 검사 코드로 인해 실패가 된다.
+
+```php
+<?php
+function verify($data, $hmac) {
+    $secret = $_SESSION['secret'];
+    if (empty($secret)) return false;
+    return hash_equals(hash_hmac('sha256', $data, $secret), $hmac);
+}
+
+/* ... */
+
+$note = verify($_COOKIE['note'], $_COOKIE['hmac'])
+        ? unserialize(base64_decode($_COOKIE['note']))
+        : new Note(false);
+?>
+```
+
+hmac 이라는 쿠키와 note라는 쿠키랑 비교하는데 note 값을 수정하면 무결성 검사로 isadmin을 1로 바꿀 수가 없다.
+hmac 쿠키 값은 gen_secret($nickname) 함수의 리턴값 $_SESSION['secret'] 을 통해 sha256으로 해쉬 된다. secret 값을 알고 싶지만 session 에 저장되어 유출시킬 방법이 없었다...
+
+
 그래서 포기...가 아니라 잠시 wrtieup이 올라 올때 까지 존버를 했다.
 
 [https://saarsec.rocks/2019/09/04/twctf-phpnote.html](https://saarsec.rocks/2019/09/04/twctf-phpnote.html) 여기 링크에 php note의 writeup이 올라왔다.!!! 
 
-사지방으로 달려가 흥분을 가라앉히고 천천히 롸없을 봤다.ㅎㅎ
+사지방으로 달려가 흥분을 가라앉히고 천천히 롸업을 봤다.ㅎㅎ
 
 이 이후는 위 링크를 참고하여 작성한 wrire up 이다.
 
