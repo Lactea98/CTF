@@ -1,6 +1,8 @@
 # PHP-NOTE
 
-### Intro
+---
+
+## # Intro
 
 이번 문제는 TokyoWesterns CTF 2019에서 나온 web 문제 "php note" 이다.
 
@@ -10,8 +12,9 @@
 
 이 문제의 기능을 간단히 설명하자면, 사용자가 입력한 note를 SESSION에 직렬화하여 저장하고, 작성한 글을 불러 올때는 SESSION에 있는 직렬화된 데이터를 역직렬화하여 웹 페이지에 출력한다.
 
+---
 
-### Guess
+## # Guess
 
 이 문제의 소스코드를 봤을 때 처음 생각이 난 부분은 php serialization vulnerability와 [https://univ-blog.xyz/entry/web-Deadly-bug-code-php](https://univ-blog.xyz/entry/web-Deadly-bug-code-php) 여기에 나와있는 코드와 매우 유사한 부분인 점이다.
 
@@ -25,7 +28,9 @@ php serialization 부분을 찾아봤지만 이번 문제에서는 이용할 만
 
 이 이후는 위 링크를 참고하여 작성한 wrire up 이다.
 
-### Information of challenge "php note"
+---
+
+## # Information of challenge "php note"
 
 이 문제는 SECRET값과 realname, nickname을 SESSION 에 저장하고 관리한다. 따라서 만약 사용자가 이 사이트에 로그인을 하게 된다면 다음과 같이 SESSION 파일에 저장이 될것이다.
 
@@ -73,8 +78,9 @@ Windows Defender 내장에는 javascript Engine이 있어 javascript 코드를 �
 
 위 코드를 이용해서 SESSION 값에 접근을 하여 SECRET 값을 유출 시킬 수 있다.
 
+---
 
-### Approach the SECRET using javascript
+## # Approach the SECRET using javascript
 
 SESSION에 javascript를 삽입하여 SESSION에 들어있는 SECRET을 유출시켜 보자.
 
@@ -116,6 +122,76 @@ SESSION ==> realname|s:8:"universe";secret|s:32:"1111111111111111111111111111111
 ```
 SESSION ==> realname|s:8:"universe";secret|s:32:"111111111111111111111111111111111111";nickname|s:8:"universe";
 ```
+
+위 SESSNION 값을 잘 보면 secret 값은 realname과 nickname 사이에 있는 것을 볼 수 있다. 
+
+위에서 Windows Defender는 Javascript Engine을 가지고 있어 파일을 분석할때 사용된다고 말했다. 만약 realname 값에 <script>var body = document.body.innerHTML;</script><body>를 nickname 값에 </body> 값을 추가하여 로그인 하면 다음과 같은 SESSION 값을 가질 것이다.
+
+```
+SESSION ==> realname|s:67:"universe <script>var body = document.body.innerHTML;</script><body>";secret|s:32:"111111111111111111111111111111111111";nickname|s:15:"universe </body>";
+```
+
+그러면 Windows Defender는 위의 세션 파일을 검사하게 될 것이다. 아마도 Javascript Engine도 사용하여 검사를 할 것이다. 즉, 세션 파일에 <script> 태그가 있어 Javascript가 동작을 하게 되어 body 라는 변수에 document.body.innerHTML 값이 저장 된다. body[0]의 값은 ", body[1]의 값은 ;, body[2] 값은 s .... 이런식으로 세션 파일 내에 있는 값에 접근이 가능해 진다. (미쳐따..)
+    
+자, 우리는 SESSION 값 내에 접근을 할 수 있게 되었다. 하지만 웹 브라우저에 출력이 되는 것도 아니고 body[0]의 값을 들고 올 방법이 없다. 
+
+여기서 Windows Defender의 Javascript Engine을 악용하는 방법을 이용한다. 위에서 설명했듯이 아래 javascript 를 이용하면 Windows Defender에 걸리지 않는다. 
+
+```javascript
+<script>
+    var mal = 'var miner=new Coin';
+    var n = document.body.innerHTML.charCodeAt(0);
+    mal = mal + String.fromCharCode(n^65) + 'ive.User();miner.start';
+    eval(mal);
+</script>
+```
+
+위 코드를 일부분만 수정하면 다음과 같다.
+
+```javascript
+<script>
+    var body = document.body.innerHTML;
+    var mal = 'var miner=new Coin';
+    var n = body[{offset}].charCodeAt(0);
+    mal = mal + String.fromCharCode(n^{char_to_check})+'ive.User();miner.start(';
+    eval(mal);
+</script><body>
+```
+
+offset은 SESSION 값에 하나씩 접근하기 위해 index 값을 늘려주면 되고, 5번째 줄에 n^{char_to_check} 이 부분이 있다. 이것의 의미는 우선 우린 n의 값(body[0])을 모르기 때문에 임의의 문자(char_to_check)와 XOR 연산을 해서 이 값이 'H'가 아닌 다른 값이 된다면
+
+```javascript
+?ive.User(); miner.start('
+```
+
+값을 가질 것이고, 만약 XOR 연산을 했는데 "H" 가 나온다면
+
+```javascript
+Hive.User(); mineer.start('
+```
+
+가 되어 ``` var miner = new CoinHive.User(); miner.start( ``` 가 된다. Windows Defender는 이 세션 파일을 malware로 탐지하여 로그인이 되지 않을 것이다. 우리는 이것을 노리는 것이다. 로그인이 되지 않는 순간을 캐치해서 n의 값을 알 수 있게 된다.
+
+여기까지가 SECRET 값에 접근하는 방법을 설명한 것이고 다음은 python코드로 이를 자동화 해보자.
+
+
+---
+
+## # Leaking the secret using python
+
+작성중...
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
