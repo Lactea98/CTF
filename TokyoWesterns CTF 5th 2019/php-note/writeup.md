@@ -1,7 +1,5 @@
 # PHP-NOTE
 
-# PHP-NOTE
-
 ### Intro
 
 이번 문제는 TokyoWesterns CTF 2019에서 나온 web 문제 "php note" 이다.
