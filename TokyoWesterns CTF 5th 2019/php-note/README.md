@@ -8,7 +8,7 @@
 
 문제 사이트 링크는 다음과 같다. [http://phpnote.chal.ctf.westerns.tokyo](http://phpnote.chal.ctf.westerns.tokyo)
 
-이 문제의 소스코드를 보기 위해서는 ?page=source 라고 요청을 보내면 php source 를 볼 수 있다.
+이 문제의 소스코드를 보기 위해서는 ?action=source 라고 요청을 보내면 php source 를 볼 수 있다.
 
 이 문제의 기능을 간단히 설명하자면, 사용자가 입력한 note를 SESSION에 직렬화하여 저장하고, 작성한 글을 불러 올때는 SESSION에 있는 직렬화된 데이터를 역직렬화하여 웹 페이지에 출력한다.
 
